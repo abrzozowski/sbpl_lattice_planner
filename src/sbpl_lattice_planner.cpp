@@ -88,7 +88,7 @@ SBPLLatticePlanner::SBPLLatticePlanner(std::string name, costmap_2d::Costmap2DRO
 
 void SBPLLatticePlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros){
   if(!initialized_){
-    ros::NodeHandle private_nh("~/"+name);
+    ros::NodeHandle private_nh("~/");
     ros::NodeHandle nh(name);
 
     ROS_INFO("Name is %s", name.c_str());

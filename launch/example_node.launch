@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<launch>
+    <master auto="start"/>
+
+    <arg name="is_movable_base_link" default="true"/>
+    <arg name="is_static_map" default="true"/>
+
+    <arg name="global_frame" default="/map"/>
+    <arg name="robot_base_frame" default="base_link"/>
+    <arg name="map_file" default="$(find sbpl_lattice_planner)/config/example/map/map_init_10cm.yaml"/>
+    <!--<arg name="map_file" default="$(find sbpl_lattice_planner)/config/example/map/map_init_2.5cm.yaml"/>-->
+
+    <!--is_movable_base_link-->
+    <group if="$(arg is_movable_base_link)">
+        <node pkg="tf" type="static_transform_publisher" name="map_to_odom"
+            args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg global_frame) /odom 100" />
+            
+        <!--<node pkg="publish_odometry" type="publish_odometry_node" name="publish_odometry_node"/>-->
+
+        <!--from https://github.com/abrzozowski/ros_example_node.git-->
+        <node pkg="publish_change_initialpose_rviz" type="publish_change_initialpose_rviz_node" name="change_initialpose"/>
+    </group>
+    
+    <!--NO is_movable_base_link-->
+    <group unless="$(arg is_movable_base_link)">
+        <node pkg="tf" type="static_transform_publisher" name="base_link_to_map"
+            args="5.0 5.0 0.0 0.0 0.0 0.0 $(arg global_frame) $(arg robot_base_frame) 40" />
+    </group>
+
+    <!--is_static_map-->
+    <group if="$(arg is_static_map)">
+        <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+        <group ns="/planner/costmap">
+            <rosparam>
+                plugins: 
+                    - {name: static_layer,           type: "costmap_2d::StaticLayer"}            
+            </rosparam>
+        </group>
+    </group>
+
+    <node pkg="sbpl_lattice_planner" type="sbpl_lattice_planner_node" respawn="false" name="planner" output="screen">
+        <remap from="/planner/goal" to="/move_base_simple/goal" />
+        <param name="primitive_filename" value="$(find sbpl_lattice_planner)/config/example/prim/non_uniform_res01_rad3_err005.mprim" />
+        <!--<param name="costmap/footprint" value="[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]" />-->
+        <param name="costmap/footprint" value="[[-0.625, -0.325], [-0.625, 0.325], [0.625, 0.325], [0.76, 0.0], [0.625, -0.325]]" />
+        <!--<param name="environment_type" value="XYThetaLattice" />-->
+        <!--<param name="planner_type" value="ARAPlanner" />-->
+        <!--<param name="allocated_time" value="5.0" />-->
+        <!--<param name="initial_epsilon" value="3.0" />-->
+        <!--<param name="forward_search" value="false" />-->
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" 
+        args="-d $(find sbpl_lattice_planner)/config/rviz/minimal.rviz"/>
+</launch>
